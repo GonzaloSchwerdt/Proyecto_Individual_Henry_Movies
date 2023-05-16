@@ -1,5 +1,0 @@
-[build]
-  command = "python main.py"
-
-[dev]
-  command = "python main.py"
