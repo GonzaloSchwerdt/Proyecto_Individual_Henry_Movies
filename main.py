@@ -26,8 +26,8 @@ app = FastAPI()
 # importamos el dataset
 
 url = 'https://drive.google.com/uc?id=1Ej4or9KVgP7hVTQghdqTDiIUCnHABJOs&export=download'
-columns_to_load = ["belongs_to_collection","budget","genres","production_companies","production_countries","release_date","revenue","runtime","spoken_languages","title"]
-df = pd.read_csv(url, usecols=columns_to_load)
+df = pd.read_csv(url,index_col=False, names=["adult","belongs_to_collection","budget","genres","homepage","id","imdb_id","original_language","original_title","overview","popularity","poster_path","production_companies","production_countries","release_date","revenue","runtime","spoken_languages","status","tagline","title","video","vote_average","vote_count"],header=0)
+df = df.drop(columns=["video","imdb_id","adult","original_title","vote_count","poster_path", "homepage"])
 
 '''
 ####################################################################
