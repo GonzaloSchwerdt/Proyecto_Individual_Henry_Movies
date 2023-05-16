@@ -1,6 +1,4 @@
 pandas
 numpy
-json
-re
 sklearn
 gradio
