@@ -83,7 +83,6 @@ for i, val in enumerate(df["production_companies"]):
 unalista = set(unalista)
 
 # Esta funcion normaliza algunas filas especiales que no podrán ser convertidas con al función principal.
-
 def get_values_production_companies_alter(lista): 
     regex = r"'name': '(?:(?<!\\)'|\\')*([^']+)'"
     matches = re.findall(regex, lista)
@@ -226,7 +225,7 @@ def peliculas_mes(mes): #'''Se ingresa el mes y la funcion retorna la cantidad d
         if df['release_date'][row].month == mesNum:
             cant = cant + 1
 
-    return 'Mes:',mes, '- Cantidad:',cant
+    return {"Mes":mes, "Cantidad":cant}
 
 
 # Peliculas_dia
@@ -262,7 +261,7 @@ def peliculas_dia(dia): #'''Se ingresa el dia y la funcion retorna la cantidad d
         if df['release_date'][row].weekday() == diaNum:
             cant = cant + 1
     
-    return 'Dia:', dia, '- Cantidad:',cant
+    return {'Dia': dia, 'Cantidad':cant}
 
 
 # Franquicia
@@ -287,7 +286,7 @@ def franquicia(franquicia): #'''Se ingresa la franquicia, retornando la cantidad
 
     if not ctrl:
         return 'La franquicia no se encuentra en la lista'
-    return 'Franquicia:',franquicia, '- Cantidad:',cant, '- Ganancia_total:',int(total), '- Ganancia_promedio:',int(total/cant)
+    return {'Franquicia':franquicia, 'Cantidad':cant, 'Ganancia_total':int(total), 'Ganancia_promedio':int(total/cant)}
 
 
 # Peliculas_pais
@@ -309,7 +308,7 @@ def peliculas_pais(pais): #'''Ingresas el pais, retornando la cantidad de pelicu
                 ctrl=True
     if not ctrl:
         return 'El pais no se encuentra en la lista'
-    return 'Pais:',pais, '- Cantidad:',cant
+    return {'Pais':pais, 'Cantidad':cant}
 
 
 # Productoras
@@ -332,7 +331,7 @@ def productoras(productora): #'''Ingresas la productora, retornando la ganancia 
     if not ctrl:
         return print('La productora no se encuentra en la lista')
     
-    return 'Productora:', productora,' - Ganancia_total: ', int(total), '- Cantidad:' , int(cant)
+    return {'Productora':productora,'Ganancia_total':int(total), 'Cantidad':cant}
 
 
 # Retorno
@@ -356,12 +355,12 @@ def retorno(pelicula): #'''Ingresas la pelicula, retornando la inversion, la gan
     
     # Por la falta de datos en df['revenue'] y df['budget'], muchos de los resultados en df["return"] son nulos o ininitos al divir por 0. Entonces devuelve "Desconocido"
     if int(df['return'][row]) ==0 :
-        return 'Pelicula:',pelicula, '- Inversion:',df['budget'][row], '- Ganacia:',df['revenue'][row],'- Retorno:',"Desconocido", '- Anio:',df['release_year'][row]
+        return {'Pelicula':pelicula, 'Inversion':int(df['budget'][row]), 'Ganacia':int(df['revenue'][row]),'Retorno':"Desconocido", 'Anio':int(df['release_year'][row])}
     
     if not ctrl:
         return 'La pelicula no se encuentra en la lista'
     
-    return 'Pelicula:',pelicula, '- Inversion:',int(df['budget'][row]), '- Ganacia:',int(df['revenue'][row]),'- Retorno:',int(round(df['return'][row],2)), '- Anio:',int(df['release_year'][row])
+    return {'Pelicula':pelicula, 'Inversion':int(df['budget'][row]), 'Ganacia':int(df['revenue'][row]),'Retorno':int(round(df['return'][row],2)), 'Anio':int(df['release_year'][row])}
 
 '''
 ####################################################################
@@ -391,18 +390,16 @@ Las demas columnas representan valores de ganancias/perdidas en dinero y valores
 '''
 
 #Importamos el dataframe que estabamos utiliando en un nuevo dataframe llamado "dataMachine" (por Machine Learning)
-# lista de columnas que queremos mantener
-keep_cols = ['title','belongs_to_collection','release_date','production_companies','production_countries','budget','revenue','return','runtime', 'release_year', 'genres']
-
-# eliminar las columnas que no necesitamos
-df = df.drop(columns=[col for col in df.columns if col not in keep_cols])
-
-# reordenar las columnas
-df = df.reindex(columns=keep_cols)
+dataMachine=pd.DataFrame()
+dataMachine["title"] = df["title"]
+dataMachine["runtime"] = df["runtime"]
+dataMachine["release_year"] = df["release_year"]
+dataMachine["genres"] = df["genres"]
+dataMachine["production_countries"] = df["production_countries"]
 
 # Tokenizamos los distintos paises y generos que existen en el dataset
-countries = df['production_countries'].str.split(', ', expand=True)
-genres = df['genres'].str.split(', ', expand=True)
+countries = dataMachine['production_countries'].str.split(', ', expand=True)
+genres = dataMachine['genres'].str.split(', ', expand=True)
 
 # Al ser variables cualitativas es necesario generar dummies de las mismas creando una columna para cada una con 
 # variables de 0/1 que indican presencia o ausencia de la característica.
@@ -414,31 +411,32 @@ country_dummies = country_dummies.groupby(level=0, axis=1).sum().clip(upper=1)
 genres_dummies = genres_dummies.groupby(level=0, axis=1).sum().clip(upper=1)
 
 # Se agreaga las columnas de dummies al dataframe
-df = pd.concat([df, genres_dummies], axis=1)
-df = pd.concat([df, country_dummies], axis=1)
+dataMachine = pd.concat([dataMachine, genres_dummies], axis=1)
+dataMachine = pd.concat([dataMachine, country_dummies], axis=1)
 
 # Se eliminan las columnas originales de 'production_countries' y 'genres'
-df.drop('genres', axis=1, inplace=True)
+dataMachine.drop('production_countries', axis=1, inplace=True)
+dataMachine.drop('genres', axis=1, inplace=True)
 
 # Para un postprocesado de datos se necesita rellenar los valores nulos de dichas columnas.
-df["runtime"] = df["runtime"].fillna(0)
-df['runtime'] = df['runtime'].apply(int) # Se convierte en integer ya que son "minutos"
-df['runtime'] = df['runtime'].replace(0,int(df['runtime'].mean()))
-df["release_year"] = df["release_year"].fillna(0)
-df['release_year'] = df['release_year'].apply(int)
+dataMachine["runtime"] = dataMachine["runtime"].fillna(0)
+dataMachine['runtime'] = dataMachine['runtime'].apply(int) # Se convierte en integer ya que son "minutos"
+dataMachine['runtime'] = dataMachine['runtime'].replace(0,int(dataMachine['runtime'].mean()))
+dataMachine["release_year"] = dataMachine["release_year"].fillna(0)
+dataMachine['release_year'] = dataMachine['release_year'].apply(int)
 
 # Gracias a un grafico de cajas se puede concluir que los outliers en dataMachine['runtime'] son {min: 60, max:200}
 # Asi que son eliminados. Cabe recalcar que un largometraje se considera a partir de los 60 minutos. Además la mayor parte de las peliculas que
 # superaban los 200 minutos eran series y no peliculas.
-df = df.drop(df[df['runtime'] > 200].index)
-df = df.drop(df[df['runtime'] < 60].index)
+dataMachine = dataMachine.drop(dataMachine[dataMachine['runtime'] > 200].index)
+dataMachine = dataMachine.drop(dataMachine[dataMachine['runtime'] < 60].index)
 
 
 # Al explorar los datos inferí que los titulos duplicados eran en realidad otras versiones de la misma pelicula gracias a que las demas caracteristicas
 # eran distintas, como "release" o los "genres". Por eso para diferenciarlas solo a dichas duplciadas les agregue en su nombre su año de "release".
 
 lista_duplicados = []
-for n in df[df.duplicated(subset=["title"], keep=False)]["title"]:
+for n in dataMachine[dataMachine.duplicated(subset=["title"], keep=False)]["title"]:
     if n not in lista_duplicados:
         lista_duplicados.append(n)
 
@@ -448,10 +446,10 @@ def add_release_year(title, release_year):
     else:
         return title
 
-df["title"] = df.apply(lambda x: add_release_year(x["title"], x["release_year"]), axis=1)
+dataMachine["title"] = dataMachine.apply(lambda x: add_release_year(x["title"], x["release_year"]), axis=1)
 
 # Eliminamos las que si quedaron duplicadas por mas que se les haya agregado el año "release"
-df = df.drop_duplicates(subset=["title"])
+dataMachine = dataMachine.drop_duplicates(subset=["title"])
 
 ###################
 
@@ -460,12 +458,12 @@ df = df.drop_duplicates(subset=["title"])
 ###################
 
 # Se seleccionan características a estandarizar
-X = df[["runtime","release_year"]]
+X = dataMachine[["runtime","release_year"]]
 scaler = StandardScaler()
 X_norm = scaler.fit_transform(X)
 
 # Se reempalzan los valores estandarizados en el DataFrame
-df[["runtime","release_year"]] = X_norm
+dataMachine[["runtime","release_year"]] = X_norm
 
 '''
 #ENTRENAMIENTO DEL MODELO
@@ -481,8 +479,8 @@ Resumiendo : Clustering => Distancias Euclidianas entre los valores
 '''
 
 # Se define el rango de la X de entrenamiento
-X = df.columns[8:]
-print (X)
+X = dataMachine.columns[1:]
+
 # Se determina el numero de clusters. Cabe aclarar que desde el gráfico "Elbow method" el número de cluster óptimo es entre 5 o 6 para
 # calcular las distancias euclidianas
 n_clusters = 6
@@ -497,7 +495,7 @@ kmeans.fit(X_norm)
 cluster_labels = kmeans.predict(X_norm)
 
 # Se agregan etiquetas de cluster a los datos originales
-df["cluster"] = cluster_labels
+dataMachine["cluster"] = cluster_labels
 
 
 # FUNCION DE RECOMENDACION
@@ -507,17 +505,17 @@ def recomendacion(title):
     
     # Encontrar cluster de la película buscada
     try:
-        movie_cluster = df[df["title"] == title]["cluster"].iloc[0]
+        movie_cluster = dataMachine[dataMachine["title"] == title]["cluster"].iloc[0]
     except IndexError:
         return "La pelicula que ingresaste no esta en la lista o tiene un error ortografico"
     
-    movie_cluster = df[df["title"] == title]["cluster"].iloc[0]
+    movie_cluster = dataMachine[dataMachine["title"] == title]["cluster"].iloc[0]
     
     # Se seleccionan películas del mismo cluster, excepto la buscada
-    similar_movies = df[(df["cluster"] == movie_cluster) & (df["title"] != title)].copy()
+    similar_movies = dataMachine[(dataMachine["cluster"] == movie_cluster) & (dataMachine["title"] != title)].copy()
     
     # Se calcula la distancia euclidiana entre cada película y la de referencia
-    reference_movie = df[df["title"] == title][X].values
+    reference_movie = dataMachine[dataMachine["title"] == title][X].values
     distances = np.linalg.norm(similar_movies[X].values - reference_movie, axis=1)
     
     # Se agrega la distancia como columna en similar_movies y se ordenan desde la mas cercana hasta la mas lejana.
@@ -525,6 +523,17 @@ def recomendacion(title):
     similar_movies = similar_movies.sort_values(by=["distance"], ascending=[True])
     
     # Se devuelven las 5 películas más similares
-    return 'Lista Recomendada:', similar_movies.head(5)["title"].tolist()
+    return {"Lista Recomendada": similar_movies.head(5)["title"].tolist()}
+
+'''
+####################################################################
+
+######################### SE INICIA LA API #########################
+
+####################################################################
+''' 
+if __name__ == '__main__':
+    uvicorn.run(app, host='127.0.0.1', port=8000)
+
 
 #############################################################################################################################################
