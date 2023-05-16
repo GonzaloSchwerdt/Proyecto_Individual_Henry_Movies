@@ -23,7 +23,8 @@ import gradio as gr
 
 # importamos el dataset
 
-df = pd.read_csv("./Proyecto Individual/movies_dataset.csv", delimiter=",",index_col=False, names=["adult","belongs_to_collection","budget","genres","homepage","id","imdb_id","original_language","original_title","overview","popularity","poster_path","production_companies","production_countries","release_date","revenue","runtime","spoken_languages","status","tagline","title","video","vote_average","vote_count"],header=0)
+url = 'https://drive.google.com/uc?id=1Ej4or9KVgP7hVTQghdqTDiIUCnHABJOs&export=download'
+df = pd.read_csv(url,index_col=False, names=["adult","belongs_to_collection","budget","genres","homepage","id","imdb_id","original_language","original_title","overview","popularity","poster_path","production_companies","production_countries","release_date","revenue","runtime","spoken_languages","status","tagline","title","video","vote_average","vote_count"],header=0)
 df = df.drop(columns=["video","imdb_id","adult","original_title","vote_count","poster_path", "homepage"])
 
 '''
