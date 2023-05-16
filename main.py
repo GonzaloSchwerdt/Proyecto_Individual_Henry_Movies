@@ -19,7 +19,7 @@ import re
 from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
 
-from fastapis import FastAPI
+from fastapi import FastAPI
 import uvicorn
 app = FastAPI()
 
