@@ -548,6 +548,7 @@ with gr.Blocks() as interface:
             gr.Interface(fn=recomendacion, inputs="text", outputs="text",title="Recomendacion de Películas (Top 5)", description="Ingresa un título de una película y devolverá 5 películas recomendadas basadas en la similitud con la ingresada. Ejemplo: 'Toy Story'")
 
 # Lanza la interfaz
-interface.launch(share=True)
+interface.launch(host='192.0.0.1', port=8080)
+
 
 #############################################################################################################################################
