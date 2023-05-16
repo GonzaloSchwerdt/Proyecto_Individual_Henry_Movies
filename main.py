@@ -391,18 +391,18 @@ Las demas columnas representan valores de ganancias/perdidas en dinero y valores
 '''
 
 #Importamos el dataframe que estabamos utiliando en un nuevo dataframe llamado "dataMachine" (por Machine Learning)
-dataMachine=pd.DataFrame()
-dataMachine["title"] = df["title"]
-dataMachine["runtime"] = df["runtime"]
-dataMachine["release_year"] = df["release_year"]
-dataMachine["genres"] = df["genres"]
-dataMachine["production_countries"] = df["production_countries"]
+# lista de columnas que queremos mantener
+keep_cols = ['title','belongs_to_collection','release_date','production_companies','production_countries','budget','revenue','return','runtime', 'release_year', 'genres']
 
-df = 0
+# eliminar las columnas que no necesitamos
+df = df.drop(columns=[col for col in df.columns if col not in keep_cols])
+
+# reordenar las columnas
+df = df.reindex(columns=keep_cols)
 
 # Tokenizamos los distintos paises y generos que existen en el dataset
-countries = dataMachine['production_countries'].str.split(', ', expand=True)
-genres = dataMachine['genres'].str.split(', ', expand=True)
+countries = df['production_countries'].str.split(', ', expand=True)
+genres = df['genres'].str.split(', ', expand=True)
 
 # Al ser variables cualitativas es necesario generar dummies de las mismas creando una columna para cada una con 
 # variables de 0/1 que indican presencia o ausencia de la característica.
@@ -414,32 +414,31 @@ country_dummies = country_dummies.groupby(level=0, axis=1).sum().clip(upper=1)
 genres_dummies = genres_dummies.groupby(level=0, axis=1).sum().clip(upper=1)
 
 # Se agreaga las columnas de dummies al dataframe
-dataMachine = pd.concat([dataMachine, genres_dummies], axis=1)
-dataMachine = pd.concat([dataMachine, country_dummies], axis=1)
+df = pd.concat([df, genres_dummies], axis=1)
+df = pd.concat([df, country_dummies], axis=1)
 
 # Se eliminan las columnas originales de 'production_countries' y 'genres'
-dataMachine.drop('production_countries', axis=1, inplace=True)
-dataMachine.drop('genres', axis=1, inplace=True)
+df.drop('genres', axis=1, inplace=True)
 
 # Para un postprocesado de datos se necesita rellenar los valores nulos de dichas columnas.
-dataMachine["runtime"] = dataMachine["runtime"].fillna(0)
-dataMachine['runtime'] = dataMachine['runtime'].apply(int) # Se convierte en integer ya que son "minutos"
-dataMachine['runtime'] = dataMachine['runtime'].replace(0,int(dataMachine['runtime'].mean()))
-dataMachine["release_year"] = dataMachine["release_year"].fillna(0)
-dataMachine['release_year'] = dataMachine['release_year'].apply(int)
+df["runtime"] = df["runtime"].fillna(0)
+df['runtime'] = df['runtime'].apply(int) # Se convierte en integer ya que son "minutos"
+df['runtime'] = df['runtime'].replace(0,int(df['runtime'].mean()))
+df["release_year"] = df["release_year"].fillna(0)
+df['release_year'] = df['release_year'].apply(int)
 
 # Gracias a un grafico de cajas se puede concluir que los outliers en dataMachine['runtime'] son {min: 60, max:200}
 # Asi que son eliminados. Cabe recalcar que un largometraje se considera a partir de los 60 minutos. Además la mayor parte de las peliculas que
 # superaban los 200 minutos eran series y no peliculas.
-dataMachine = dataMachine.drop(dataMachine[dataMachine['runtime'] > 200].index)
-dataMachine = dataMachine.drop(dataMachine[dataMachine['runtime'] < 60].index)
+df = df.drop(df[df['runtime'] > 200].index)
+df = df.drop(df[df['runtime'] < 60].index)
 
 
 # Al explorar los datos inferí que los titulos duplicados eran en realidad otras versiones de la misma pelicula gracias a que las demas caracteristicas
 # eran distintas, como "release" o los "genres". Por eso para diferenciarlas solo a dichas duplciadas les agregue en su nombre su año de "release".
 
 lista_duplicados = []
-for n in dataMachine[dataMachine.duplicated(subset=["title"], keep=False)]["title"]:
+for n in df[df.duplicated(subset=["title"], keep=False)]["title"]:
     if n not in lista_duplicados:
         lista_duplicados.append(n)
 
@@ -449,10 +448,10 @@ def add_release_year(title, release_year):
     else:
         return title
 
-dataMachine["title"] = dataMachine.apply(lambda x: add_release_year(x["title"], x["release_year"]), axis=1)
+df["title"] = df.apply(lambda x: add_release_year(x["title"], x["release_year"]), axis=1)
 
 # Eliminamos las que si quedaron duplicadas por mas que se les haya agregado el año "release"
-dataMachine = dataMachine.drop_duplicates(subset=["title"])
+df = df.drop_duplicates(subset=["title"])
 
 ###################
 
@@ -461,12 +460,12 @@ dataMachine = dataMachine.drop_duplicates(subset=["title"])
 ###################
 
 # Se seleccionan características a estandarizar
-X = dataMachine[["runtime","release_year"]]
+X = df[["runtime","release_year"]]
 scaler = StandardScaler()
 X_norm = scaler.fit_transform(X)
 
 # Se reempalzan los valores estandarizados en el DataFrame
-dataMachine[["runtime","release_year"]] = X_norm
+df[["runtime","release_year"]] = X_norm
 
 '''
 #ENTRENAMIENTO DEL MODELO
@@ -482,8 +481,8 @@ Resumiendo : Clustering => Distancias Euclidianas entre los valores
 '''
 
 # Se define el rango de la X de entrenamiento
-X = dataMachine.columns[1:]
-
+X = df.columns[8:]
+print (X)
 # Se determina el numero de clusters. Cabe aclarar que desde el gráfico "Elbow method" el número de cluster óptimo es entre 5 o 6 para
 # calcular las distancias euclidianas
 n_clusters = 6
@@ -498,7 +497,7 @@ kmeans.fit(X_norm)
 cluster_labels = kmeans.predict(X_norm)
 
 # Se agregan etiquetas de cluster a los datos originales
-dataMachine["cluster"] = cluster_labels
+df["cluster"] = cluster_labels
 
 
 # FUNCION DE RECOMENDACION
@@ -508,17 +507,17 @@ def recomendacion(title):
     
     # Encontrar cluster de la película buscada
     try:
-        movie_cluster = dataMachine[dataMachine["title"] == title]["cluster"].iloc[0]
+        movie_cluster = df[df["title"] == title]["cluster"].iloc[0]
     except IndexError:
         return "La pelicula que ingresaste no esta en la lista o tiene un error ortografico"
     
-    movie_cluster = dataMachine[dataMachine["title"] == title]["cluster"].iloc[0]
+    movie_cluster = df[df["title"] == title]["cluster"].iloc[0]
     
     # Se seleccionan películas del mismo cluster, excepto la buscada
-    similar_movies = dataMachine[(dataMachine["cluster"] == movie_cluster) & (dataMachine["title"] != title)].copy()
+    similar_movies = df[(df["cluster"] == movie_cluster) & (df["title"] != title)].copy()
     
     # Se calcula la distancia euclidiana entre cada película y la de referencia
-    reference_movie = dataMachine[dataMachine["title"] == title][X].values
+    reference_movie = df[df["title"] == title][X].values
     distances = np.linalg.norm(similar_movies[X].values - reference_movie, axis=1)
     
     # Se agrega la distancia como columna en similar_movies y se ordenan desde la mas cercana hasta la mas lejana.
@@ -535,7 +534,6 @@ def recomendacion(title):
 
 ####################################################################
 ''' 
-
 if __name__ == '__main__':
     uvicorn.run(app, host='0.0.0.0', port=10000)
 
