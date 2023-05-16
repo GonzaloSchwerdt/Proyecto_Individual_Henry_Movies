@@ -6,7 +6,7 @@ Gonzalo Schwerdt
 
 #Video: https://drive.google.com/file/d/1ur7HGb3yg2sz4Fy7Wy8GqGKuLGnhKlym/view?usp=sharing
 
-Se realizaron multiples normalizaciones al data set.
+Se realizaron multiples normalizaciones al data set:
 - Primero se extrajo todos los valores de los diccionarios/listas presentes en el dataset.
 - En el caso de columnas con valores str, cualquier otro valor inválido se lo reemplaza con un vacío.
 - En el caso de columnas numéricas se completó los vacíos con el promedio del conjunto de dichos datos.
