@@ -1,1 +1,6 @@
-pandas, numpy, json, re, sklearin, gradio, os
+pandas
+numpy
+json
+re
+sklearn
+gradio
