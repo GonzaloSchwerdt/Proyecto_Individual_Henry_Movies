@@ -526,7 +526,5 @@ def recomendacion(title):
     
     # Se devuelven las 5 películas más similares
     return 'Lista Recomendada:', similar_movies.head(5)["title"].tolist()
-if __name__ == '__main__':
-    uvicorn.run(app, host='0.0.0.0', port=10000)
 
 #############################################################################################################################################
