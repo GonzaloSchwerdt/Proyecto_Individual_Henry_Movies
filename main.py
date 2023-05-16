@@ -485,7 +485,7 @@ X = df.columns[8:]
 print (X)
 # Se determina el numero de clusters. Cabe aclarar que desde el gráfico "Elbow method" el número de cluster óptimo es entre 5 o 6 para
 # calcular las distancias euclidianas
-n_clusters = 12
+n_clusters = 25
 
 # Se crea el modelo KMeans
 kmeans = KMeans(n_clusters=n_clusters,n_init=10, random_state=42)
