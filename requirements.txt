@@ -86,7 +86,7 @@ linkify-it-py==2.0.2
 Markdown==3.4.3
 markdown-it-py==2.2.0
 MarkupSafe==2.1.2
-matplotlib==3.7.0
+matplotlib==3.5.3
 matplotlib-inline==0.1.6
 mdit-py-plugins==0.3.3
 mdurl==0.1.2
