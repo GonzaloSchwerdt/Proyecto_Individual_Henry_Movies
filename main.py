@@ -398,6 +398,8 @@ dataMachine["release_year"] = df["release_year"]
 dataMachine["genres"] = df["genres"]
 dataMachine["production_countries"] = df["production_countries"]
 
+df = 0
+
 # Tokenizamos los distintos paises y generos que existen en el dataset
 countries = dataMachine['production_countries'].str.split(', ', expand=True)
 genres = dataMachine['genres'].str.split(', ', expand=True)
